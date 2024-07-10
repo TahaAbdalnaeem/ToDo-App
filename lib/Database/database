@@ -1,0 +1,96 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:todoapp/Database/tasks.dart';
+
+class DatabaseTask {
+  static Database? database;
+  static List<tasks> myTasks = [];
+ 
+
+  static Future<void> intialdata() async {
+    String databasePath = await getDatabasesPath();
+    databasePath = databasePath + 'task.db';
+    database = await openDatabase(
+      databasePath,
+      version: 1,
+      
+      onCreate: (database, version) {
+        print('databasecreated');
+        database
+            .execute(
+                "CREATE TABLE 'tasks'(id INTEGER PRIMARY KEY,title TEXT,description TEXT,data TEXT,time TEXT, finish BOOLEN)")
+            .then((value) {
+          print("Table Is Created ");
+        }).catchError((error) {
+          print(error.toString());
+        });
+      },
+      
+      
+      onOpen: (database) {
+        print("database opend");
+      },
+    );
+    
+  }
+
+  static Future<void> insertData({
+    required String title,
+    required String description,
+    required String data,
+    required String time,
+    
+    required int finish,
+  }) async {
+    await database!.rawInsert(
+        'INSERT INTO tasks(title,description,data,time,finish)VALUES(?,?,?,?,?)',
+        [title, description, data, time, finish]).then((value) {
+      print(value);
+    }).catchError((error) {
+      print(error.toString());
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> takeData() async {
+    return await database!.rawQuery("SELECT * FROM tasks").then((value) {
+      return value;
+    }).catchError((error) {
+      print(error.toString());
+      return [];
+    });
+  }
+
+  static Future<void> updatData({
+    required String title,
+    required String description,
+    required String data,
+    required String time,
+    required int finish,
+    required int id,
+  }) async {
+    await database!.rawUpdate(
+        'UPDATE tasks SET title=?,description=?,data=?,time=?,finish=? WHERE id =?',
+        [
+          title,
+          description,
+          data,
+          time,
+          finish,
+          id,
+        ]).then((value) {
+     print("$value Database Updated");
+     
+    }).catchError((error) {
+      print(error.toString());
+    });
+  }
+
+  static Future<void> deleteData({
+    required int id,
+  }) async {
+    database!.rawDelete('DELETE FROM tasks WHERE id = ?', [id]).then((value) {
+      print('${value}is deleted from database');
+    }).catchError((error) {
+      print(error.toString());
+    });
+  }
+}
